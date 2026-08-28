@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Enums\ProcessingStatus;
 use App\Jobs\FetchTranscript;
 use App\Jobs\FetchVideoMetadata;
-use App\Jobs\GenerateSummary;
 use App\Models\Video;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
@@ -57,7 +56,6 @@ class VideoControllerTest extends TestCase
         Bus::assertChained([
             FetchVideoMetadata::class,
             FetchTranscript::class,
-            GenerateSummary::class,
         ]);
     }
 
@@ -121,7 +119,7 @@ class VideoControllerTest extends TestCase
         $this->assertSame(ProcessingStatus::Pending, $video->status);
         $this->assertNull($video->failed_step);
         $this->assertNull($video->failed_reason);
-        Bus::assertChained([FetchVideoMetadata::class, FetchTranscript::class, GenerateSummary::class]);
+        Bus::assertChained([FetchVideoMetadata::class, FetchTranscript::class]);
     }
 
     public function test_retry_is_allowed_from_a_completed_video(): void
@@ -136,7 +134,7 @@ class VideoControllerTest extends TestCase
         $this->post(route('videos.retry', $video));
 
         $this->assertSame(ProcessingStatus::Pending, $video->refresh()->status);
-        Bus::assertChained([FetchVideoMetadata::class, FetchTranscript::class, GenerateSummary::class]);
+        Bus::assertChained([FetchVideoMetadata::class, FetchTranscript::class]);
     }
 
     public function test_retry_is_rejected_while_the_video_is_still_processing(): void

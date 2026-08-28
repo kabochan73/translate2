@@ -6,7 +6,6 @@ use App\Enums\ProcessingStatus;
 use App\Http\Requests\StoreVideoRequest;
 use App\Jobs\FetchTranscript;
 use App\Jobs\FetchVideoMetadata;
-use App\Jobs\GenerateSummary;
 use App\Models\Video;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -88,13 +87,15 @@ class VideoController extends Controller
 
     /**
      * 取り込みジョブチェーンをキューに投入する。
+     *
+     * GenerateSummary は静的チェーンに含めない。字幕が取れた時だけ
+     * FetchTranscript が投げる（字幕なしはそこでチェーンが終わる。§3.4）。
      */
     private function dispatchIngestion(Video $video): void
     {
         Bus::chain([
             new FetchVideoMetadata($video),
             new FetchTranscript($video),
-            new GenerateSummary($video),
         ])->dispatch();
     }
 }

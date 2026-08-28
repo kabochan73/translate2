@@ -70,17 +70,20 @@ Model にロジックを詰めすぎない。
 ### 3.1 ジョブチェーン
 
 ```php
-// VideoController::store() の末尾
+// VideoController::dispatchIngestion()（store / retry で共用）
 Bus::chain([
     new FetchVideoMetadata($video),
     new FetchTranscript($video),
-    new GenerateSummary($video),
 ])->dispatch();
 ```
 
 > 2026-08-28: 専用 `ingest` キューはやめて **default キュー 1 本**にした。
 > 個人利用の規模で分ける利点が薄く、`queue` コンテナの `queue:work` も
 > default だけ見ればよく単純。将来重い処理を分けたくなったら `onQueue()` を足す。
+
+> 2026-08-28: **`GenerateSummary` は静的チェーンに入れない**（§3.4 の未決事項を決定）。
+> `FetchTranscript` が字幕を取れた時だけ `GenerateSummary::dispatch($video)` を投げる。
+> 字幕なしはチェーンが `FetchTranscript` で自然に終わる（無駄なジョブが走らない）。
 
 チェーンは「前のジョブが成功したら次」。途中で例外が投げられると
 以降のジョブは実行されず、`$job->failed()` が呼ばれる。
@@ -90,8 +93,8 @@ Bus::chain([
 | ジョブ | やること | 開始時の status | 正常終了後 |
 |---|---|---|---|
 | `FetchVideoMetadata` | YouTubeService でメタデータ取得 → `videos` 更新 + タグ紐付け | `fetching_metadata` | 次へ |
-| `FetchTranscript` | TranscriptService で字幕取得 → `transcripts` 作成 | `fetching_transcript` | 字幕あり→次へ / 字幕なし→`no_transcript` でチェーン中断 |
-| `GenerateSummary` | SummaryGenerator で要約 → `summaries` 更新 | `summarizing` | `completed` |
+| `FetchTranscript` | TranscriptService で字幕取得 → `transcripts` を updateOrCreate | `fetching_transcript` | 字幕あり→`GenerateSummary` を投げる / 字幕なし→`no_transcript` で終了 |
+| `GenerateSummary` | SummaryGenerator で要約 → `summaries` 更新（チェーン外。`FetchTranscript` が投げる） | `summarizing` | `completed` |
 
 ### 3.3 共通の設定（各ジョブに書く）
 
@@ -128,22 +131,28 @@ class FetchVideoMetadata implements ShouldQueue
 }
 ```
 
-### 3.4 字幕なしの分岐
+### 3.4 字幕なしの分岐（2026-08-28 実装確定）
 
-`FetchTranscript` で字幕が取れなかった場合は **例外ではなく正常終了** として扱い、
-`status = no_transcript` にして残りのチェーンを止める。
+チェーンは `[FetchVideoMetadata, FetchTranscript]` の 2 本だけ。
+`GenerateSummary` は `FetchTranscript` が字幕を取れた時だけ投げる。
+字幕なしは `status = no_transcript`（**例外ではなく正常終了**）にして return するだけ
+＝チェーンがそこで自然に終わる。
 
 ```php
-if ($transcript === null) {
+// FetchTranscript::handle()
+$data = $transcripts->fetch($this->video->youtube_id, $this->video->source_language);
+
+if ($data === null) {
     $this->video->update(['status' => ProcessingStatus::NoTranscript]);
-    $this->batch()?->cancel();   // または chain を空にする方法で後続を止める
-    return;
+    return;                                   // チェーンはここで終わり
 }
+
+$this->video->transcript()->updateOrCreate([], [...]);
+GenerateSummary::dispatch($this->video);      // 字幕がある時だけ後続を投げる
 ```
 
-> 実装メモ: `Bus::chain` で後続を止めたい時は、
-> `FetchTranscript` の中で判定して `GenerateSummary` を投げ直さない構成にするか、
-> チェーンではなくバッチ + 条件分岐にする。フェーズ4で最終決定する。
+一時的な取得失敗（レート制限等）は `TranscriptService` が例外を投げ、ジョブが
+リトライ → 3 回失敗で `failed`（`failed_step=transcript`）。
 
 ### 3.5 再試行（ユーザー操作）
 
@@ -409,7 +418,7 @@ docs/
 
 ## 12. 未決事項（実装時に確定する）
 
-- [ ] `Bus::chain` で「字幕なし時に後続を止める」具体的な書き方（§3.4）
+- [x] `Bus::chain` で「字幕なし時に後続を止める」具体的な書き方（§3.4）→ **2 本チェーン + `FetchTranscript` が条件付きで `GenerateSummary` を投げる方式に決定（2026-08-28）**
 - [ ] Claude prompt caching に `anthropic-beta` ヘッダが要るか（公式ドキュメント確認）
 - [ ] map-reduce のチャンクサイズと分割アルゴリズムの詳細
 - [ ] `cost_usd` の単価テーブルをどこに持つか（config か定数か）
