@@ -42,6 +42,11 @@ return [
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
+
+        // 概算コスト計算用の単価（USD / 100 万トークン）。モデルを変えたら更新する。
+        // 既定は claude-sonnet-5 の第一者 API レート。
+        'input_cost_per_mtok' => (float) env('ANTHROPIC_INPUT_COST_PER_MTOK', 2.0),
+        'output_cost_per_mtok' => (float) env('ANTHROPIC_OUTPUT_COST_PER_MTOK', 10.0),
     ],
 
 ];

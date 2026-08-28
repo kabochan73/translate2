@@ -206,18 +206,20 @@ Claude Messages API の薄い HTTP ラッパー。**公式 SDK ではなく `Htt
 要約の組み立てロジック。AnthropicService を使う。
 
 ```
-入力: Transcript
- 1. content をトークン数で概算分割（1チャンク ≒ 6–8k tok, 文境界で切る）
+入力: string $transcriptContent（Transcript::content）
+ 1. トークン概算分割（1チャンク ≒ 6000 tok。mb_strlen/3 で概算、単語境界で詰める）
+    ※ 自動生成字幕は文の区切り記号が無いことが多いので「文境界」ではなく単語境界にした
  2. チャンクが1個なら: そのまま最終プロンプトへ
     チャンクが複数なら:
-      a. 各チャンクを「部分要約」プロンプトで要約 (map)
-      b. 部分要約を全部連結して「統合要約」プロンプトへ (reduce)
+      a. 各チャンクを「部分要点」プロンプトで抽出 (map, maxTokens 1500)
+      b. 部分要点を全部連結して「統合要約」プロンプトへ (reduce)
  3. 出力フォーマット: TL;DR / キーポイント / チャプター別
  4. usage を合算して返す
-出力: { content: string(markdown), input_tokens, output_tokens }
+出力: { content: string(markdown), input_tokens, output_tokens, prompt_version }
 ```
 
-プロンプトは `PROMPT_VERSION = 'v1'` として定数管理。変えたら版を上げる。
+プロンプトは `SummaryGenerator::PROMPT_VERSION = 'v1'` 定数。変えたら版を上げる。
+`GenerateSummary` ジョブが結果を `summaries` に書き、`cost_usd` を単価×トークンで概算する。
 
 ---
 
@@ -418,5 +420,5 @@ docs/
 - [x] `Bus::chain` で「字幕なし時に後続を止める」具体的な書き方（§3.4）→ **2 本チェーン + `FetchTranscript` が条件付きで `GenerateSummary` を投げる方式に決定（2026-08-28）**
 - [ ] Claude prompt caching に `anthropic-beta` ヘッダが要るか（公式ドキュメント確認）
 - [ ] map-reduce のチャンクサイズと分割アルゴリズムの詳細
-- [ ] `cost_usd` の単価テーブルをどこに持つか（config か定数か）
+- [x] `cost_usd` の単価テーブルをどこに持つか → **`config/services.php` の `anthropic.input_cost_per_mtok` / `output_cost_per_mtok`（`.env` で上書き可）。既定は claude-sonnet-5 のレート $2 / $10（2026-08-28）**
 - [ ] IFrame Player の CSP 設定（本番 nginx）

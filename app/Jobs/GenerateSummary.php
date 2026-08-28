@@ -3,18 +3,19 @@
 namespace App\Jobs;
 
 use App\Enums\ProcessingStatus;
+use App\Enums\SummaryStatus;
 use App\Models\Video;
+use App\Services\SummaryGenerator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Throwable;
 
 /**
- * 取り込みチェーンの 3 本目：要約生成。
+ * 取り込みチェーンの 3 本目：要約生成（design.md §3.2 / §4.4）。
  *
- * ⚠️ フェーズ3 時点では骨格のみ。status を進めて Completed にするだけで
- * 要約は生成しない。実処理（SummaryGenerator・map-reduce・トークン記録）は
- * フェーズ4 で実装する。
+ * チェーンには入っておらず、字幕が取れた時に FetchTranscript から投げられる。
  */
 class GenerateSummary implements ShouldQueue
 {
@@ -22,7 +23,7 @@ class GenerateSummary implements ShouldQueue
 
     public int $tries = 3;
 
-    public int $timeout = 120;
+    public int $timeout = 300;
 
     public function __construct(public readonly Video $video) {}
 
@@ -34,21 +35,64 @@ class GenerateSummary implements ShouldQueue
         return [10, 30, 60];
     }
 
-    public function handle(): void
+    public function handle(SummaryGenerator $generator): void
     {
+        $transcript = $this->video->transcript;
+
+        if ($transcript === null) {
+            throw new RuntimeException('字幕が無い動画に GenerateSummary が実行されました。');
+        }
+
         $this->video->update(['status' => ProcessingStatus::Summarizing]);
 
-        // TODO(フェーズ4): SummaryGenerator で要約 → summaries を updateOrCreate。
+        // 再試行で既存の要約行を作り直せるよう updateOrCreate（NFR-3）。
+        $summary = $this->video->summary()->updateOrCreate([], [
+            'status' => SummaryStatus::Processing,
+            'language' => 'ja',
+        ]);
+
+        $result = $generator->generate($transcript->content);
+
+        $summary->update([
+            'status' => SummaryStatus::Completed,
+            'content' => $result['content'],
+            'model' => config('services.anthropic.model'),
+            'prompt_version' => $result['prompt_version'],
+            'input_tokens' => $result['input_tokens'],
+            'output_tokens' => $result['output_tokens'],
+            'cost_usd' => $this->estimateCost($result['input_tokens'], $result['output_tokens']),
+            'error_message' => null,
+            'completed_at' => now(),
+        ]);
 
         $this->video->update(['status' => ProcessingStatus::Completed]);
     }
 
     public function failed(Throwable $e): void
     {
+        $message = Str::limit($e->getMessage(), 500);
+
+        $this->video->summary()->update([
+            'status' => SummaryStatus::Failed,
+            'error_message' => $message,
+        ]);
+
         $this->video->update([
             'status' => ProcessingStatus::Failed,
             'failed_step' => 'summary',
-            'failed_reason' => Str::limit($e->getMessage(), 500),
+            'failed_reason' => $message,
         ]);
+    }
+
+    /**
+     * 概算コスト（USD）。単価は config/services.php の anthropic 節。
+     */
+    private function estimateCost(int $inputTokens, int $outputTokens): float
+    {
+        return round(
+            $inputTokens / 1_000_000 * (float) config('services.anthropic.input_cost_per_mtok')
+            + $outputTokens / 1_000_000 * (float) config('services.anthropic.output_cost_per_mtok'),
+            6,
+        );
     }
 }
