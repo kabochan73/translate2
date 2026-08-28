@@ -1,9 +1,14 @@
 # translate2 データベース設計書
 
-- 版: 1.0
-- 作成日: 2026-08-27
+- 版: 1.1
+- 作成日: 2026-08-27（1.1: 2026-08-28 認証を後回しに変更）
 - DBMS: PostgreSQL 16
 - 関連: 要件定義書（Artifact） / [design.md](./design.md)
+
+> **認証について（2026-08-28 決定）**
+> 今回はログイン機能を実装しない（ポートフォリオ用の短期デプロイ）。将来つける前提の「後回し」。
+> `users` / `password_reset_tokens` は Laravel 標準マイグレーションのまま**残す**（消さない）。
+> ただし AdminSeeder は作らず、`ADMIN_*` 環境変数も今回は未使用。
 
 ---
 
@@ -148,7 +153,8 @@ videos 1 ──── 1 transcripts
 | `remember_token` | varchar(100) | NULL |
 | `created_at` / `updated_at` | timestamptz | NOT NULL |
 
-- 一般登録なし。シーダーが `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD` から 1 件だけ `updateOrCreate` する。
+- **今回はログイン機能なし**。`users` テーブルは Laravel 標準マイグレーションのまま作られるが、レコードは 0 件で運用（どの画面も認証を要求しない）。
+- 将来ログイン機能を追加する時に、シーダーが `ADMIN_EMAIL` / `ADMIN_NAME` / `ADMIN_PASSWORD` から 1 件だけ `updateOrCreate` する想定（今回は未実装）。
 - `password_reset_tokens` / `sessions` テーブルは Laravel 標準セット。ただしセッションは Redis ドライバなので `sessions` テーブルは未使用。
 
 ---
@@ -158,7 +164,7 @@ videos 1 ──── 1 transcripts
 FK があるので順番が重要。
 
 ```
-0001_..._create_users_table                （Laravel 標準）
+0001_..._create_users_table                （Laravel 標準。今回ログイン機能は無いが消さずに残す）
 0001_..._create_cache_table                 （Laravel 標準）
 0001_..._create_jobs_table                  （キュー / failed_jobs）
 2026_..._create_videos_table
