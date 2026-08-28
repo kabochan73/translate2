@@ -49,4 +49,12 @@ class Video extends Model
     {
         return $this->hasOne(Transcript::class);
     }
+
+    /**
+     * この動画の要約（0 or 1 件）。
+     */
+    public function summary(): HasOne
+    {
+        return $this->hasOne(Summary::class);
+    }
 }

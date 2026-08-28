@@ -244,7 +244,7 @@ public function videos(): BelongsToMany   { return $this->belongsToMany(Video::c
 'segments'         => 'array',       // jsonb ⇄ PHP array
 
 // Summary
-'status'           => SummaryStatus::class,   // 別 enum にするか string のままかは実装時判断
+'status'           => SummaryStatus::class,   // 専用 enum に決定（2026-08-28）。App\Enums\SummaryStatus
 'input_tokens'     => 'integer',
 'output_tokens'    => 'integer',
 'cost_usd'         => 'decimal:6',
@@ -292,7 +292,7 @@ public function videos(): BelongsToMany   { return $this->belongsToMany(Video::c
 
 ## 9. 未決事項
 
-- [ ] `summaries.status` を専用 enum にするか string のままにするか（design.md §4.4 と合わせて決定）
+- [x] `summaries.status` を専用 enum にするか string のままにするか → **専用 enum `App\Enums\SummaryStatus`（pending/processing/completed/failed）に決定（2026-08-28）**。`ProcessingStatus` と扱いを揃えるため
 - [ ] `cost_usd` の桁（`numeric(10,6)` で十分か）
 - [ ] `failed_jobs` を DB に残すか Redis / Horizon 方式にするか（フェーズ4）
 - [ ] `segments` に含める情報を増やすか（話者、信頼度など）— 現状は start/end/text のみ
