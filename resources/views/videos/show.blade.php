@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @use('App\Enums\ProcessingStatus')
+@use('App\Enums\SummaryStatus')
 
 @section('title', $video->title ?? '動画詳細')
 
@@ -78,10 +79,20 @@
 
         <section class="mt-8">
             <h2 class="text-lg font-bold">要約</h2>
-            <p class="mt-2 text-sm text-gray-500">
-                {{-- TODO(フェーズ4): 要約本文（Markdown）をここに表示する --}}
-                要約生成はフェーズ4 で実装します。
-            </p>
+
+            @if ($video->summary?->status === SummaryStatus::Completed && $video->summary->content)
+                <div class="summary-body mt-3">
+                    {!! str($video->summary->content)->markdown(['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
+                </div>
+            @elseif ($video->status === ProcessingStatus::NoTranscript)
+                <p class="mt-2 text-sm text-gray-500">この動画には字幕が無いため、要約はありません。</p>
+            @elseif ($video->summary?->status === SummaryStatus::Failed)
+                <p class="mt-2 text-sm text-red-600">要約の生成に失敗しました。上の「再試行」を押してください。</p>
+            @elseif (in_array($video->status, [ProcessingStatus::Summarizing, ProcessingStatus::Pending, ProcessingStatus::FetchingMetadata, ProcessingStatus::FetchingTranscript], true))
+                <p class="mt-2 text-sm text-gray-500">要約を準備中です…（完了すると自動では切り替わりません。ページを再読み込みしてください）</p>
+            @else
+                <p class="mt-2 text-sm text-gray-500">まだ要約はありません。</p>
+            @endif
         </section>
     </div>
 @endsection

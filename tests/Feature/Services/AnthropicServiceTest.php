@@ -59,6 +59,34 @@ class AnthropicServiceTest extends TestCase
         });
     }
 
+    public function test_it_sends_the_workspace_id_header_when_configured(): void
+    {
+        Http::fake([
+            'api.anthropic.com/*' => Http::response([
+                'content' => [['type' => 'text', 'text' => 'ok']],
+                'usage' => ['input_tokens' => 1, 'output_tokens' => 1],
+            ]),
+        ]);
+
+        (new AnthropicService('test-key', 'claude-sonnet-5', 'wrkspc_123'))->complete('SYS', 'USER');
+
+        Http::assertSent(fn (Request $request) => $request->hasHeader('anthropic-workspace-id', 'wrkspc_123'));
+    }
+
+    public function test_it_omits_the_workspace_id_header_when_not_configured(): void
+    {
+        Http::fake([
+            'api.anthropic.com/*' => Http::response([
+                'content' => [['type' => 'text', 'text' => 'ok']],
+                'usage' => ['input_tokens' => 1, 'output_tokens' => 1],
+            ]),
+        ]);
+
+        $this->service()->complete('SYS', 'USER');
+
+        Http::assertSent(fn (Request $request) => ! $request->hasHeader('anthropic-workspace-id'));
+    }
+
     public function test_it_retries_on_529_then_succeeds(): void
     {
         Http::fake([

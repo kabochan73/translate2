@@ -32,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AnthropicService::class, fn () => new AnthropicService(
             config('services.anthropic.key'),
             config('services.anthropic.model'),
+            config('services.anthropic.workspace_id'),
         ));
     }
 

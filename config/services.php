@@ -41,6 +41,8 @@ return [
 
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
+        // identity-linked な API キーはワークスペース ID が必須（不要なキーなら空でよい）。
+        'workspace_id' => env('ANTHROPIC_WORKSPACE_ID'),
         'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-5'),
 
         // 概算コスト計算用の単価（USD / 100 万トークン）。モデルを変えたら更新する。

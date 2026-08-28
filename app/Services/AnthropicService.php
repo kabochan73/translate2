@@ -21,6 +21,7 @@ class AnthropicService
     public function __construct(
         private readonly ?string $apiKey,
         private readonly string $model,
+        private readonly ?string $workspaceId = null,
     ) {}
 
     /**
@@ -73,10 +74,11 @@ class AnthropicService
      */
     private function request(): PendingRequest
     {
-        return Http::withHeaders([
+        return Http::withHeaders(array_filter([
             'x-api-key' => $this->apiKey,
             'anthropic-version' => self::API_VERSION,
-        ])
+            'anthropic-workspace-id' => $this->workspaceId,
+        ]))
             ->timeout(120)
             ->retry(3, 1000, function ($exception) {
                 return in_array($exception->response?->status(), [429, 529], true);
