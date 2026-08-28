@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProcessingStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Video extends Model
@@ -56,5 +57,13 @@ class Video extends Model
     public function summary(): HasOne
     {
         return $this->hasOne(Summary::class);
+    }
+
+    /**
+     * この動画に付いたタグ（0 件以上）。中間テーブルは tag_video。
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class);
     }
 }
