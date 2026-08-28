@@ -59,6 +59,37 @@ class AnthropicServiceTest extends TestCase
         });
     }
 
+    public function test_it_reads_the_text_block_past_a_thinking_block(): void
+    {
+        Http::fake([
+            'api.anthropic.com/*' => Http::response([
+                'content' => [
+                    ['type' => 'thinking', 'thinking' => '考え中...'],
+                    ['type' => 'text', 'text' => '本文です'],
+                ],
+                'usage' => ['input_tokens' => 10, 'output_tokens' => 5],
+            ]),
+        ]);
+
+        $result = $this->service()->complete('SYS', 'USER');
+
+        $this->assertSame('本文です', $result['content']);
+    }
+
+    public function test_it_disables_extended_thinking(): void
+    {
+        Http::fake([
+            'api.anthropic.com/*' => Http::response([
+                'content' => [['type' => 'text', 'text' => 'ok']],
+                'usage' => ['input_tokens' => 1, 'output_tokens' => 1],
+            ]),
+        ]);
+
+        $this->service()->complete('SYS', 'USER');
+
+        Http::assertSent(fn (Request $request) => $request['thinking'] === ['type' => 'disabled']);
+    }
+
     public function test_it_sends_the_workspace_id_header_when_configured(): void
     {
         Http::fake([

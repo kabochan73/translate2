@@ -37,6 +37,8 @@ class AnthropicService
             ->post(self::API_URL, [
                 'model' => $this->model,
                 'max_tokens' => $maxTokens,
+                // 要約は素直なタスクなので拡張思考は使わない（コスト減、レスポンスも単純に）。
+                'thinking' => ['type' => 'disabled'],
                 'system' => [[
                     'type' => 'text',
                     'text' => $system,
@@ -48,7 +50,8 @@ class AnthropicService
             ])
             ->throw();
 
-        $text = $response->json('content.0.text');
+        // content は複数ブロックになりうる（thinking 等）ので text ブロックを探す。
+        $text = collect($response->json('content', []))->firstWhere('type', 'text')['text'] ?? null;
 
         if (! is_string($text) || $text === '') {
             throw new RuntimeException('Anthropic API がテキストを返しませんでした。');
