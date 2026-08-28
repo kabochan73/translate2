@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ProcessingStatus;
+use App\Enums\SummaryStatus;
 use App\Http\Requests\StoreVideoRequest;
 use App\Jobs\FetchTranscript;
 use App\Jobs\FetchVideoMetadata;
 use App\Models\Video;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Bus;
 
@@ -56,6 +58,23 @@ class VideoController extends Controller
         $video->load('tags', 'transcript', 'summary');
 
         return view('videos.show', ['video' => $video]);
+    }
+
+    /**
+     * 取り込みの進捗を返す軽量 API（FR-7）。詳細ページの Alpine が 3 秒ごとに叩く。
+     */
+    public function status(Video $video): JsonResponse
+    {
+        return response()->json([
+            'status' => $video->status->value,
+            'step' => $video->status->step(),
+            'is_terminal' => $video->status->isTerminal(),
+            'summary_ready' => $video->summary()
+                ->where('status', SummaryStatus::Completed)
+                ->exists(),
+            'failed_step' => $video->failed_step,
+            'failed_reason' => $video->failed_reason,
+        ]);
     }
 
     /**

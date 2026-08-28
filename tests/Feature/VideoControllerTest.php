@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\ProcessingStatus;
+use App\Enums\SummaryStatus;
 use App\Jobs\FetchTranscript;
 use App\Jobs\FetchVideoMetadata;
 use App\Models\Video;
@@ -100,6 +101,57 @@ class VideoControllerTest extends TestCase
         ]);
 
         $this->get(route('videos.show', $video))->assertOk()->assertSee('Some title');
+    }
+
+    public function test_status_returns_progress_for_a_running_video(): void
+    {
+        $video = Video::create([
+            'youtube_id' => 'dQw4w9WgXcQ',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'status' => ProcessingStatus::FetchingTranscript,
+        ]);
+
+        $this->getJson(route('videos.status', $video))->assertOk()->assertExactJson([
+            'status' => 'fetching_transcript',
+            'step' => 3,
+            'is_terminal' => false,
+            'summary_ready' => false,
+            'failed_step' => null,
+            'failed_reason' => null,
+        ]);
+    }
+
+    public function test_status_reports_a_ready_summary_when_completed(): void
+    {
+        $video = Video::create([
+            'youtube_id' => 'dQw4w9WgXcQ',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'status' => ProcessingStatus::Completed,
+        ]);
+        $video->summary()->create(['status' => SummaryStatus::Completed, 'language' => 'ja', 'content' => 'x']);
+
+        $this->getJson(route('videos.status', $video))->assertOk()->assertJson([
+            'is_terminal' => true,
+            'summary_ready' => true,
+            'step' => 4,
+        ]);
+    }
+
+    public function test_status_includes_the_failure_reason(): void
+    {
+        $video = Video::create([
+            'youtube_id' => 'dQw4w9WgXcQ',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'status' => ProcessingStatus::Failed,
+            'failed_step' => 'transcript',
+            'failed_reason' => 'rate limited',
+        ]);
+
+        $this->getJson(route('videos.status', $video))->assertOk()->assertJson([
+            'is_terminal' => true,
+            'failed_step' => 'transcript',
+            'failed_reason' => 'rate limited',
+        ]);
     }
 
     public function test_retry_from_a_failed_video_resets_it_and_redispatches_the_chain(): void

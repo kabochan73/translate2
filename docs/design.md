@@ -239,8 +239,10 @@ GET /videos/{video}/status
   }
 ```
 
-- ~~認証必須。~~（今回は認証なし）`VideoController::status()` で返す。
+- ~~認証必須。~~（今回は認証なし）`VideoController::status()` で返す。`throttle:60,1`。
 - キャッシュ不可（毎回最新）。
+- 実装済み（2026-08-28）。`step` は `ProcessingStatus::step()`、`is_terminal` は `isTerminal()`、
+  `summary_ready` は `summaries.status === completed` の存在チェック。
 
 ### 5.2 フロント（Alpine）
 
@@ -371,9 +373,9 @@ resources/views/videos/
     # _transcript-player.blade.php は作らない（§6）
 resources/js/
   # transcript-player.js は作らない（§6）
-  ingest-progress.js
+  app.js                          # Alpine 起動 + Alpine.data('ingestProgress')（§5.2）
 lang/ja/
-  video.php                       # 画面文言
+  video.php                       # 画面文言（未着手。今は Blade 直書き）
 docs/
   design.md
   db_design.md
