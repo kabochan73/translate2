@@ -47,8 +47,8 @@
     <section class="mt-10">
         <h2 class="text-lg font-semibold">要約</h2>
         <p class="mt-2 text-sm text-gray-500">
-            {{-- TODO(フェーズ4): 要約本文・字幕プレイヤーをここに表示する --}}
-            字幕取得と要約生成はフェーズ4 で実装します。
+            {{-- TODO(フェーズ4): 要約本文（Markdown）をここに表示する --}}
+            要約生成はフェーズ4 で実装します。
         </p>
     </section>
 @endsection

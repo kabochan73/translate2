@@ -18,7 +18,8 @@
 
 YouTube の URL を登録すると、バックグラウンドで
 「メタデータ取得 → 字幕取得 → 要約生成」を順に実行し、
-詳細画面で動画・字幕・要約を同期表示する Web アプリ。
+詳細画面で動画（埋め込み）と日本語要約を表示する Web アプリ。
+（字幕テキストは取得・保存するが画面には出さない。§6 参照）
 
 ```
 [ブラウザ]
@@ -175,6 +176,7 @@ Bus::chain([...])->dispatch();
 - `mrmysql/youtube-transcript` の `TranscriptListFetcher` をラップ
 - 優先言語ロジック: `source_language` → ベース言語（`en-US`→`en`）→ 利用可能な任意
 - 返り値: `{ language, content, segments: [{start, end, text}] }` または `null`
+  - `content` = 要約の入力。`segments` は保存のみ（§6 のとおり画面表示はしない）
 - `html_entity_decode` で `&amp;` 等を戻す（translate1 と同じ）
 
 ### 4.3 AnthropicService
@@ -256,7 +258,7 @@ function ingestProgress(id, initial) {
       this.status = data.status;
       if (data.is_terminal) {
         clearInterval(this.timer);
-        window.location.reload();   // 要約・字幕を出すため一度だけリロード
+        window.location.reload();   // 要約を出すため一度だけリロード
       }
     },
     isTerminal() {
@@ -270,39 +272,30 @@ function ingestProgress(id, initial) {
 
 ---
 
-## 6. インタラクティブ字幕プレイヤー（FR-10）
+## 6. 詳細ページの動画表示（旧 FR-10 インタラクティブ字幕プレイヤー）
 
-詳細ページの目玉。translate1 が保存済みで未使用の `segments` を活かす。
+> **2026-08-28 決定：インタラクティブ字幕プレイヤーは実装しない。**
+> 字幕は元言語（英語等）のままで、日本語話者には同期表示の実用性が薄いと判断。
+> 詳細ページは「動画 + 日本語要約 + メタ情報」に絞る。
+> `transcripts.segments` は**保存は続けるが画面には出さない**（将来 v2 機能として
+> プレイヤーを足す余地は残す。ログイン機能と同じ「後回し」）。
+> 旧 §6 の IFrame Player API / click-to-seek / ハイライト / 自動スクロール /
+> ページ内フィルタ、および `transcript-player.js`・`_transcript-player.blade.php` は作らない。
 
-### 6.1 構成
+### 6.1 詳細ページの構成（現行）
 
 ```
-┌───────────────────────────┬──────────────────┐
-│  YouTube IFrame Player     │  字幕リスト        │
-│  (16:9)                    │  [検索ボックス]    │
-│                            │  00:00 テキスト…  │ ← クリックでシーク
-│  要約（Markdown）           │  00:04 テキスト…  │ ← 再生中はハイライト
-│                            │  00:09 テキスト…  │
-└───────────────────────────┴──────────────────┘
-（モバイルは「動画 / 字幕」タブ切替）
+戻る
+タイトル / チャンネル名 / ステータス
+[失敗時] 失敗理由
+埋め込み動画（プレーンな iframe embed。JS API は使わない）
+タグ
+メタ情報（元URL / 再生時間 / 公開日）
+要約（Markdown, フェーズ4）
 ```
 
-### 6.2 プレイヤー連携（Alpine + IFrame Player API）
-
-- `https://www.youtube.com/iframe_api` を読み込み（外部スクリプト。ローカル/本番とも許可されている）
-- `onReady` で `player` を保持
-- 字幕行クリック → `player.seekTo(segment.start, true)` + `playVideo()`
-- `setInterval(250ms)` で `player.getCurrentTime()` を取得
-  → 現在時刻が入るセグメントを二分探索で特定 → その行に `.active` 付与 + `scrollIntoView({ block: 'nearest' })`
-- 字幕内検索は純粋なクライアント側フィルタ（`segments` を JS 配列で持ってフィルタ表示）
-
-### 6.3 データの渡し方
-
-```blade
-<div x-data="transcriptPlayer(@js($video->youtube_id), @js($video->transcript->segments ?? []))">
-```
-
-`@js()` で PHP 配列を安全に JSON 化して Alpine に渡す。
+- 動画は `https://www.youtube.com/embed/{youtube_id}` をそのまま `<iframe>` で貼るだけ。
+  IFrame Player API（`iframe_api`）は読み込まない。
 
 ---
 
@@ -367,9 +360,9 @@ resources/views/videos/
   partials/
     _card.blade.php
     _progress.blade.php
-    _transcript-player.blade.php
+    # _transcript-player.blade.php は作らない（§6）
 resources/js/
-  transcript-player.js            # Alpine コンポーネント
+  # transcript-player.js は作らない（§6）
   ingest-progress.js
 lang/ja/
   video.php                       # 画面文言
@@ -406,10 +399,11 @@ docs/
 | 2 データ設計 | db_design.md 全体 |
 | 3 動画の取り込み | §2, §3, §4.1 |
 | 4 字幕と要約 | §3.4, §4.2, §4.3, §4.4, §8 |
-| 5 画面 | §5, §6, §7 |
+| 5 画面 | §5, §6, §7（§6 は動画埋め込み＋要約のみ。字幕プレイヤーは無し） |
 | 6 検索 | §7 |
 | 7 デプロイ | 要件定義書 §12 |
 | （将来）ログイン機能 | Breeze 導入・`auth` ミドルウェア・AdminSeeder。今回のスコープ外 |
+| （将来）字幕プレイヤー | 旧 FR-10。IFrame Player API + click-to-seek 等。今回のスコープ外（§6） |
 
 ---
 

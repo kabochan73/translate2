@@ -70,7 +70,7 @@ videos 1 ──── 1 transcripts
 | `video_id` | bigint | NOT NULL, **UNIQUE**, FK → `videos.id` ON DELETE CASCADE | 1 動画 1 字幕 |
 | `language` | varchar(16) | NOT NULL | 取得できた字幕の言語コード |
 | `content` | text | NOT NULL | 全セグメントを半角スペースで連結した本文。要約の入力 |
-| `segments` | jsonb | NULL | 下記 JSON 構造。字幕プレイヤーの各行 |
+| `segments` | jsonb | NULL | 下記 JSON 構造。**取得・保存はするが画面表示はしない**（字幕プレイヤーはスコープ外／design.md §6）。将来 v2 機能で使う可能性を残して保存を続ける |
 | `created_at` / `updated_at` | timestamptz | NOT NULL | |
 
 **`segments` の構造**
@@ -85,6 +85,7 @@ videos 1 ──── 1 transcripts
 - `start` / `end` は秒（float）。`end = start + duration`。
 - 配列順 = 再生順。
 - 型は `jsonb`（`json` ではなく）。将来の部分参照に備える。現状インデックスは不要。
+- 今回は保存のみで未使用。`FetchTranscript` が字幕ライブラリの返り値をそのまま入れる。
 
 **インデックス**: `transcripts_video_id_unique`（自動）のみ。
 
