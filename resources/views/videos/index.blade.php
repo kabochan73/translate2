@@ -16,7 +16,7 @@
         </ul>
 
         <div class="mt-12">
-            {{ $videos->onEachSide(1)->links() }}
+            {{ $videos->links() }}
         </div>
     @endif
 @endsection

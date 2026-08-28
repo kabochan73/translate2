@@ -318,12 +318,13 @@ Video::query()
           ->orWhereHas('tags', fn ($t) => $t->whereLike('name', "%{$q}%"));
     }))
     ->latest()
-    ->paginate(18)                           // 3 列 × 6 行
+    ->simplePaginate(18)                     // 3 列 × 6 行、前へ/次へのみ（総件数 COUNT を省く）
     ->withQueryString();                     // 検索語をページリンクへ
 ```
 
 - 全文検索（tsvector）は**使わない**。translate1 と同じ `LIKE` で十分（スコープ外）。
 - `whereLike` は Laravel 11+ の大文字小文字非依存ヘルパ。
+- ページ送りは `simplePaginate`（`tailwind.blade.php` ではなく `simple-tailwind.blade.php` を使う）。
 
 ---
 

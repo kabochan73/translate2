@@ -37,7 +37,8 @@ class VideoControllerTest extends TestCase
         $videos = $this->get(route('videos.index'))->assertOk()->viewData('videos');
 
         $this->assertCount(18, $videos);
-        $this->assertSame(20, $videos->total());
+        $this->assertTrue($videos->hasMorePages());
+        $this->assertCount(2, $this->get(route('videos.index', ['page' => 2]))->viewData('videos'));
     }
 
     public function test_store_creates_a_pending_video_and_dispatches_the_chain(): void

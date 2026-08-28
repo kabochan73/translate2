@@ -19,8 +19,8 @@ class VideoController extends Controller
      */
     public function index(): View
     {
-        // 3 列グリッド × 6 行。
-        $videos = Video::with('tags')->latest()->paginate(18);
+        // 3 列グリッド × 6 行。総件数の COUNT を省く simplePaginate（前へ/次へのみ）。
+        $videos = Video::with('tags')->latest()->simplePaginate(18);
 
         return view('videos.index', ['videos' => $videos]);
     }
