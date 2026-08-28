@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cda2add6397422fb1a2eb5b9207f1575",
+    "content-hash": "22aaf450ea5e09c1bf1a9054ca48993c",
     "packages": [
         {
             "name": "brick/math",
@@ -2131,6 +2131,59 @@
                 }
             ],
             "time": "2026-01-02T08:56:05+00:00"
+        },
+        {
+            "name": "mrmysql/youtube-transcript",
+            "version": "v0.0.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/MrMySQL/youtube-transcript.git",
+                "reference": "26b8337b8ace23ae83963805f0ed7b5b7b8f78de"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/MrMySQL/youtube-transcript/zipball/26b8337b8ace23ae83963805f0ed7b5b7b8f78de",
+                "reference": "26b8337b8ace23ae83963805f0ed7b5b7b8f78de",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2",
+                "psr/http-client": "^1.0",
+                "psr/http-factory": "^1.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^10",
+                "psalm/plugin-phpunit": "^0.19.5",
+                "vimeo/psalm": "^6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MrMySQL\\YoutubeTranscript\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "WTFPL"
+            ],
+            "authors": [
+                {
+                    "name": "MrMySQL",
+                    "email": "mrmysql.90@gmail.com"
+                }
+            ],
+            "description": "Retrieving transcripts for youtube videos.",
+            "support": {
+                "issues": "https://github.com/MrMySQL/youtube-transcript/issues",
+                "source": "https://github.com/MrMySQL/youtube-transcript/tree/v0.0.6"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/MrMySQL",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-05-31T13:02:36+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -8344,5 +8397,5 @@
         "php": "^8.3"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

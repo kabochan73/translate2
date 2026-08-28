@@ -3,7 +3,10 @@
 namespace App\Providers;
 
 use App\Services\YouTubeService;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Psr7\HttpFactory;
 use Illuminate\Support\ServiceProvider;
+use MrMySQL\YoutubeTranscript\TranscriptListFetcher;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
             YouTubeService::class,
             fn () => new YouTubeService(config('services.youtube.key')),
         );
+
+        // 字幕取得ライブラリ。PSR-18 クライアント + PSR-17 ファクトリを渡す
+        // （Laravel が Guzzle を同梱しているのでそれを使う）。
+        $this->app->singleton(TranscriptListFetcher::class, function () {
+            $factory = new HttpFactory;
+
+            return new TranscriptListFetcher(new GuzzleClient, $factory, $factory);
+        });
     }
 
     /**
