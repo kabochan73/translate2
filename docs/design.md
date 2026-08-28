@@ -318,7 +318,7 @@ Video::query()
           ->orWhereHas('tags', fn ($t) => $t->whereLike('name', "%{$q}%"));
     }))
     ->latest()
-    ->paginate(12)
+    ->paginate(18)                           // 3 列 × 6 行
     ->withQueryString();                     // 検索語をページリンクへ
 ```
 

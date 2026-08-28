@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProcessingStatus;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -41,6 +42,28 @@ class Video extends Model
             'published_at' => 'datetime',
             'status' => ProcessingStatus::class,
         ];
+    }
+
+    /**
+     * サムネイルに重ねる再生時間表示（"4:13" / "1:02:33"）。未取得なら null。
+     */
+    protected function durationLabel(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $seconds = $this->duration_seconds;
+
+            if ($seconds === null) {
+                return null;
+            }
+
+            $h = intdiv($seconds, 3600);
+            $m = intdiv($seconds % 3600, 60);
+            $s = $seconds % 60;
+
+            return $h > 0
+                ? sprintf('%d:%02d:%02d', $h, $m, $s)
+                : sprintf('%d:%02d', $m, $s);
+        });
     }
 
     /**

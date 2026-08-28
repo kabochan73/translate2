@@ -19,7 +19,8 @@ class VideoController extends Controller
      */
     public function index(): View
     {
-        $videos = Video::with('tags')->latest()->paginate(12);
+        // 3 列グリッド × 6 行。
+        $videos = Video::with('tags')->latest()->paginate(18);
 
         return view('videos.index', ['videos' => $videos]);
     }

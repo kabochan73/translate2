@@ -25,6 +25,21 @@ class VideoControllerTest extends TestCase
         $this->get(route('videos.index'))->assertOk()->assertSee('動画一覧');
     }
 
+    public function test_index_paginates_at_18_per_page(): void
+    {
+        foreach (range(1, 20) as $i) {
+            Video::create([
+                'youtube_id' => 'yt'.str_pad((string) $i, 9, '0', STR_PAD_LEFT),
+                'url' => "https://youtu.be/yt{$i}",
+            ]);
+        }
+
+        $videos = $this->get(route('videos.index'))->assertOk()->viewData('videos');
+
+        $this->assertCount(18, $videos);
+        $this->assertSame(20, $videos->total());
+    }
+
     public function test_store_creates_a_pending_video_and_dispatches_the_chain(): void
     {
         Bus::fake();

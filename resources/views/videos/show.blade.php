@@ -39,7 +39,7 @@
         <dt class="text-gray-500">元の URL</dt>
         <dd class="truncate"><a href="{{ $video->url }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">{{ $video->url }}</a></dd>
         <dt class="text-gray-500">再生時間</dt>
-        <dd>{{ $video->duration_seconds ? gmdate('H:i:s', $video->duration_seconds) : '—' }}</dd>
+        <dd>{{ $video->duration_label ?? '—' }}</dd>
         <dt class="text-gray-500">公開日</dt>
         <dd>{{ $video->published_at?->format('Y-m-d') ?? '—' }}</dd>
     </dl>

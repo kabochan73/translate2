@@ -3,12 +3,11 @@
 @section('title', '動画一覧')
 
 @section('content')
-    <h1 class="text-2xl font-bold">動画一覧</h1>
+    <h1 class="text-xl font-bold">動画一覧</h1>
 
-    <form method="POST" action="{{ route('videos.store') }}" class="mt-6">
+    <form method="POST" action="{{ route('videos.store') }}" class="mt-4">
         @csrf
-        <label for="url" class="block text-sm font-medium text-gray-700">YouTube の URL</label>
-        <div class="mt-1 flex gap-2">
+        <div class="flex gap-2">
             <input
                 type="url"
                 name="url"
@@ -27,38 +26,19 @@
         @enderror
     </form>
 
-    <div class="mt-10">
-        @forelse ($videos as $video)
-            @if ($loop->first)
-                <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            @endif
-                <li class="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                    <a href="{{ route('videos.show', $video) }}" class="block">
-                        <div class="aspect-video bg-gray-100">
-                            @if ($video->thumbnail_url)
-                                <img src="{{ $video->thumbnail_url }}" alt="" class="h-full w-full object-cover">
-                            @endif
-                        </div>
-                        <div class="p-3">
-                            <p class="line-clamp-2 text-sm font-medium">
-                                {{ $video->title ?? $video->url }}
-                            </p>
-                            <p class="mt-1 text-xs text-gray-500">{{ $video->channel_name }}</p>
-                            <p class="mt-2 inline-block rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                                {{ $video->status->label() }}
-                            </p>
-                        </div>
-                    </a>
+    @if ($videos->isEmpty())
+        <p class="mt-12 text-sm text-gray-500">まだ動画がありません。上のフォームから登録してください。</p>
+    @else
+        <ul class="mt-8 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($videos as $video)
+                <li>
+                    @include('videos.partials._card', ['video' => $video])
                 </li>
-            @if ($loop->last)
-                </ul>
-            @endif
-        @empty
-            <p class="text-sm text-gray-500">まだ動画がありません。上のフォームから登録してください。</p>
-        @endforelse
-    </div>
+            @endforeach
+        </ul>
 
-    <div class="mt-8">
-        {{ $videos->links() }}
-    </div>
+        <div class="mt-12">
+            {{ $videos->onEachSide(1)->links() }}
+        </div>
+    @endif
 @endsection

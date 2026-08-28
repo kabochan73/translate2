@@ -257,7 +257,7 @@ public function videos(): BelongsToMany   { return $this->belongsToMany(Video::c
 
 | 画面 | クエリ | eager load |
 |---|---|---|
-| 一覧 | `Video::with('tags')->latest()->paginate(12)` | `tags` |
+| 一覧 | `Video::with('tags')->latest()->paginate(18)` | `tags` |
 | 詳細 | `$video->load('tags', 'transcript', 'summary')` | 3 つ全部 |
 | ステータス API | `Video::select('id','status','failed_step','failed_reason')->find($id)` | なし（軽量） |
 
