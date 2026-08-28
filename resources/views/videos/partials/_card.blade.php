@@ -1,14 +1,10 @@
 @use('App\Enums\ProcessingStatus')
 
 <a href="{{ route('videos.show', $video) }}" class="group block">
-    <div class="relative aspect-video overflow-hidden rounded-xl bg-gray-200">
+    <div class="relative aspect-video overflow-hidden bg-gray-200">
         @if ($video->thumbnail_url)
-            <img
-                src="{{ $video->thumbnail_url }}"
-                alt=""
-                loading="lazy"
-                class="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]"
-            >
+            <img src="{{ $video->thumbnail_url }}" alt="" loading="lazy"
+                class="h-full w-full object-cover transition duration-200 group-hover:scale-[1.03]">
         @endif
 
         @if ($video->duration_label)
@@ -29,7 +25,7 @@
     </div>
 
     <div class="mt-2.5">
-        <h3 class="line-clamp-2 text-sm font-medium leading-snug text-gray-900">
+        <h3 class="line-clamp-2 text-sm font-bold leading-snug text-gray-900">
             {{ $video->title ?? $video->url }}
         </h3>
         <p class="mt-1 text-xs text-gray-600">{{ $video->channel_name }}</p>
