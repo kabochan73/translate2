@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ProcessingStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Video extends Model
 {
@@ -39,5 +40,13 @@ class Video extends Model
             'published_at' => 'datetime',
             'status' => ProcessingStatus::class,
         ];
+    }
+
+    /**
+     * この動画の字幕（0 or 1 件）。
+     */
+    public function transcript(): HasOne
+    {
+        return $this->hasOne(Transcript::class);
     }
 }
