@@ -74,8 +74,12 @@ Bus::chain([
     new FetchVideoMetadata($video),
     new FetchTranscript($video),
     new GenerateSummary($video),
-])->onQueue('ingest')->dispatch();
+])->dispatch();
 ```
+
+> 2026-08-28: 専用 `ingest` キューはやめて **default キュー 1 本**にした。
+> 個人利用の規模で分ける利点が薄く、`queue` コンテナの `queue:work` も
+> default だけ見ればよく単純。将来重い処理を分けたくなったら `onQueue()` を足す。
 
 チェーンは「前のジョブが成功したら次」。途中で例外が投げられると
 以降のジョブは実行されず、`$job->failed()` が呼ばれる。

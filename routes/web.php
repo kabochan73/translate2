@@ -1,7 +1,13 @@
 <?php
 
+use App\Http\Controllers\VideoController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// ダッシュボードは作らない。ルートは動画一覧へ。
+Route::redirect('/', '/videos');
+
+Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
+Route::post('/videos', [VideoController::class, 'store'])
+    ->middleware('throttle:20,1')
+    ->name('videos.store');
+Route::get('/videos/{video}', [VideoController::class, 'show'])->name('videos.show');

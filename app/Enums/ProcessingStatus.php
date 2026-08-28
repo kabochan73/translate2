@@ -69,4 +69,20 @@ enum ProcessingStatus: string
             default => false,
         };
     }
+
+    /**
+     * 画面表示用の日本語ラベル。
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending => '待機中',
+            self::FetchingMetadata => '情報取得中',
+            self::FetchingTranscript => '字幕取得中',
+            self::Summarizing => '要約中',
+            self::Completed => '完了',
+            self::NoTranscript => '字幕なし',
+            self::Failed => '失敗',
+        };
+    }
 }
