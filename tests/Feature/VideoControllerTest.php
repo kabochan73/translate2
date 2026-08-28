@@ -103,4 +103,54 @@ class VideoControllerTest extends TestCase
 
         $this->get(route('videos.show', $video))->assertOk()->assertSee('Some title');
     }
+
+    public function test_retry_from_a_failed_video_resets_it_and_redispatches_the_chain(): void
+    {
+        Bus::fake();
+        $video = Video::create([
+            'youtube_id' => 'dQw4w9WgXcQ',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'status' => ProcessingStatus::Failed,
+            'failed_step' => 'metadata',
+            'failed_reason' => '404',
+        ]);
+
+        $this->post(route('videos.retry', $video))->assertRedirect(route('videos.show', $video));
+
+        $video->refresh();
+        $this->assertSame(ProcessingStatus::Pending, $video->status);
+        $this->assertNull($video->failed_step);
+        $this->assertNull($video->failed_reason);
+        Bus::assertChained([FetchVideoMetadata::class, FetchTranscript::class, GenerateSummary::class]);
+    }
+
+    public function test_retry_is_allowed_from_a_completed_video(): void
+    {
+        Bus::fake();
+        $video = Video::create([
+            'youtube_id' => 'dQw4w9WgXcQ',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'status' => ProcessingStatus::Completed,
+        ]);
+
+        $this->post(route('videos.retry', $video));
+
+        $this->assertSame(ProcessingStatus::Pending, $video->refresh()->status);
+        Bus::assertChained([FetchVideoMetadata::class, FetchTranscript::class, GenerateSummary::class]);
+    }
+
+    public function test_retry_is_rejected_while_the_video_is_still_processing(): void
+    {
+        Bus::fake();
+        $video = Video::create([
+            'youtube_id' => 'dQw4w9WgXcQ',
+            'url' => 'https://youtu.be/dQw4w9WgXcQ',
+            'status' => ProcessingStatus::Summarizing,
+        ]);
+
+        $this->post(route('videos.retry', $video))->assertRedirect(route('videos.show', $video));
+
+        $this->assertSame(ProcessingStatus::Summarizing, $video->refresh()->status);
+        Bus::assertNothingDispatched();
+    }
 }

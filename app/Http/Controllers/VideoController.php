@@ -42,11 +42,7 @@ class VideoController extends Controller
                 ->with('status', 'この動画はすでに登録されています。');
         }
 
-        Bus::chain([
-            new FetchVideoMetadata($video),
-            new FetchTranscript($video),
-            new GenerateSummary($video),
-        ])->dispatch();
+        $this->dispatchIngestion($video);
 
         return redirect()
             ->route('videos.show', $video)
@@ -61,5 +57,44 @@ class VideoController extends Controller
         $video->load('tags', 'transcript', 'summary');
 
         return view('videos.show', ['video' => $video]);
+    }
+
+    /**
+     * 取り込みを最初からやり直す（design.md §3.5）。
+     *
+     * 終了状態（completed / no_transcript / failed）からのみ許可する。
+     * 既存の transcript / summary は各ジョブが updateOrCreate で上書きする（NFR-3）。
+     */
+    public function retry(Video $video): RedirectResponse
+    {
+        if (! $video->status->isTerminal()) {
+            return redirect()
+                ->route('videos.show', $video)
+                ->with('status', 'まだ処理中です。完了してから再試行してください。');
+        }
+
+        $video->update([
+            'status' => ProcessingStatus::Pending,
+            'failed_step' => null,
+            'failed_reason' => null,
+        ]);
+
+        $this->dispatchIngestion($video);
+
+        return redirect()
+            ->route('videos.show', $video)
+            ->with('status', '再試行を開始しました。');
+    }
+
+    /**
+     * 取り込みジョブチェーンをキューに投入する。
+     */
+    private function dispatchIngestion(Video $video): void
+    {
+        Bus::chain([
+            new FetchVideoMetadata($video),
+            new FetchTranscript($video),
+            new GenerateSummary($video),
+        ])->dispatch();
     }
 }

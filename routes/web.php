@@ -11,3 +11,6 @@ Route::post('/videos', [VideoController::class, 'store'])
     ->middleware('throttle:20,1')
     ->name('videos.store');
 Route::get('/videos/{video}', [VideoController::class, 'show'])->name('videos.show');
+Route::post('/videos/{video}/retry', [VideoController::class, 'retry'])
+    ->middleware('throttle:20,1')
+    ->name('videos.retry');

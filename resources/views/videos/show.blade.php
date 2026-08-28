@@ -24,13 +24,23 @@
                 <h1 class="text-xl font-bold leading-snug">{{ $video->title ?? '(情報取得中)' }}</h1>
                 <p class="mt-1 text-sm text-gray-600">{{ $video->channel_name }}</p>
             </div>
-            <span @class([
-                'shrink-0 rounded-full px-3 py-1 text-sm',
-                'bg-red-100 text-red-700' => $video->status === ProcessingStatus::Failed,
-                'bg-gray-100 text-gray-700' => $video->status !== ProcessingStatus::Failed,
-            ])>
-                {{ $video->status->label() }}
-            </span>
+            <div class="flex shrink-0 items-center gap-2">
+                <span @class([
+                    'rounded-full px-3 py-1 text-sm',
+                    'bg-red-100 text-red-700' => $video->status === ProcessingStatus::Failed,
+                    'bg-gray-100 text-gray-700' => $video->status !== ProcessingStatus::Failed,
+                ])>
+                    {{ $video->status->label() }}
+                </span>
+                @if ($video->status->isTerminal())
+                    <form method="POST" action="{{ route('videos.retry', $video) }}">
+                        @csrf
+                        <button type="submit" class="rounded-full border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100">
+                            再試行
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
 
         @if ($video->status === ProcessingStatus::Failed)
