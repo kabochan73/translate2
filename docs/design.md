@@ -188,21 +188,18 @@ Bus::chain([...])->dispatch();
   - `content` = 要約の入力。`segments` は保存のみ（§6 のとおり画面表示はしない）
 - `html_entity_decode` で `&amp;` 等を戻す（translate1 と同じ）
 
-### 4.3 AnthropicService
+### 4.3 AnthropicService（2026-08-28 実装）
 
-薄い HTTP ラッパー。translate1 から以下を追加:
+Claude Messages API の薄い HTTP ラッパー。**公式 SDK ではなく `Http::` を使う**
+（YouTubeService と揃える／`Http::fake()` でテストする方針）。translate1 から以下を追加:
 
-- `timeout(120)` と `Http::retry()` で 429 / 529 に対応
-  ```php
-  Http::retry(3, 1000, function ($exception, $request) {
-      $status = $exception->response?->status();
-      return in_array($status, [429, 529], true);
-  }, throw: false)
-  ```
+- `complete(string $system, string $user, int $maxTokens = 4096): array`
+  → `{ content, input_tokens, output_tokens }`。`input_tokens` はキャッシュ読み書き分も合算。
+- `timeout(120)` と `Http::retry(3, 1000, ..., throw: false)` で 429 / 529 に対応
 - prompt caching: system プロンプトを
-  `[{ type: 'text', text: '...', cache_control: { type: 'ephemeral' } }]` 形式で送る
-  （`anthropic-beta` ヘッダの要否はフェーズ4で公式ドキュメント確認）
-- レスポンスの `usage.input_tokens` / `usage.output_tokens` を返り値に含める
+  `[{ type: 'text', text: '...', cache_control: { type: 'ephemeral' } }]` 形式で送る。
+  **基本のキャッシュに `anthropic-beta` ヘッダは不要**（`anthropic-version: 2023-06-01` のみ）。
+- モデルは `config('services.anthropic.model')`（`.env` の `ANTHROPIC_MODEL`、既定 `claude-sonnet-5`）
 
 ### 4.4 SummaryGenerator（新規）
 

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\AnthropicService;
 use App\Services\YouTubeService;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Psr7\HttpFactory;
@@ -27,6 +28,11 @@ class AppServiceProvider extends ServiceProvider
 
             return new TranscriptListFetcher(new GuzzleClient, $factory, $factory);
         });
+
+        $this->app->singleton(AnthropicService::class, fn () => new AnthropicService(
+            config('services.anthropic.key'),
+            config('services.anthropic.model'),
+        ));
     }
 
     /**
