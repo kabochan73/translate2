@@ -7,7 +7,7 @@
     @if ($videos->isEmpty())
         <p class="mt-12 text-sm text-gray-500">まだ動画がありません。上のフォームから登録してください。</p>
     @else
-        <ul class="mt-8 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        <ul class="mt-8 grid grid-cols-1 gap-x-4 gap-y-8 pb-20 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($videos as $video)
                 <li>
                     @include('videos.partials._card', ['video' => $video])
@@ -15,8 +15,10 @@
             @endforeach
         </ul>
 
-        <div class="mt-12">
-            {{ $videos->links() }}
+        <div class="fixed inset-x-0 bottom-0 z-10 border-t border-gray-200 bg-white/90 px-4 py-3 backdrop-blur">
+            <div class="mx-auto max-w-6xl">
+                {{ $videos->links() }}
+            </div>
         </div>
     @endif
 @endsection
