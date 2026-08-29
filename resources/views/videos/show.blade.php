@@ -11,7 +11,7 @@
 
         <div class="mt-3 aspect-video w-full overflow-hidden rounded-xl bg-black">
             <iframe
-                src="https://www.youtube.com/embed/{{ $video->youtube_id }}"
+                src="https://www.youtube-nocookie.com/embed/{{ $video->youtube_id }}"
                 title="{{ $video->title }}"
                 class="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
